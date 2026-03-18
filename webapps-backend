@@ -448,15 +448,24 @@ def change_icon(name):
         shutil.rmtree(temp_dir)
         return False
     
+    # Delete the old icon if it lives inside ICON_DIR and differs from the new path
+    content = desktop_path.read_text()
+    old_icon_match = re.search(r'^Icon=(.+)$', content, re.MULTILINE)
+    if old_icon_match:
+        old_icon_path = Path(old_icon_match.group(1))
+        if old_icon_path.exists() and old_icon_path.parent == ICON_DIR:
+            old_icon_path.unlink()
+            print(f"Deleted old icon: {old_icon_path}")
+
     # Save to final location
     safe = safe_name(name).lower()
     icon_file = ICON_DIR / f"{safe}.png"
     local_icons_dir = Path.home() / ".icons"
     local_icon_backup = local_icons_dir / f"{safe}.png"
-    
+
     ICON_DIR.mkdir(parents=True, exist_ok=True)
     local_icons_dir.mkdir(parents=True, exist_ok=True)
-    
+
     shutil.copy(selected_temp, icon_file)
     shutil.copy(selected_temp, local_icon_backup)
     
