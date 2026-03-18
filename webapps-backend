@@ -113,62 +113,42 @@ def download_image(url, dest):
 
 
 def get_icon(name, url, custom_icon_path=None):
-    """Get icon for the webapp - from custom path, local icons, DuckDuckGo search, or favicon"""
+    """Get icon for the webapp - from custom path, DuckDuckGo search, or favicon"""
     safe = safe_name(name).lower()
     icon_file = ICON_DIR / f"{safe}.png"
-    local_icons_dir = Path.home() / ".icons"
-    local_icon_backup = local_icons_dir / f"{safe}.png"
-    
+
     ICON_DIR.mkdir(parents=True, exist_ok=True)
-    local_icons_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # 1. Use custom icon if provided
     if custom_icon_path:
         custom_path = Path(custom_icon_path).expanduser()
         if custom_path.exists():
             shutil.copy(custom_path, icon_file)
-            # Also save to local icons for future use
-            shutil.copy(custom_path, local_icon_backup)
             print(f"Using custom icon: {custom_icon_path}")
             return icon_file
         else:
             print(f"Warning: Custom icon not found: {custom_icon_path}", file=sys.stderr)
-    
-    # 2. Search in $HOME/.icons directory
-    if local_icons_dir.exists():
-        print(f"Searching for icon in {local_icons_dir}...")
-        # Search for icon files matching the app name (case-insensitive)
-        name_lower = name.lower()
-        for icon_path in local_icons_dir.rglob("*"):
-            if icon_path.is_file() and name_lower in icon_path.stem.lower():
-                # Check if it's an image file
-                if icon_path.suffix.lower() in ['.png', '.jpg', '.jpeg', '.svg', '.ico']:
-                    shutil.copy(icon_path, icon_file)
-                    print(f"Found local icon: {icon_path}")
-                    return icon_file
-    
-    # 3. Search on DuckDuckGo
+
+    # 2. Search on DuckDuckGo
     print(f"Searching for icon on DuckDuckGo...")
     icon_url = search_duckduckgo_icons(name)
     if icon_url and download_image(icon_url, icon_file):
-        shutil.copy(icon_file, local_icon_backup)
-        print(f"Downloaded icon from DuckDuckGo (saved to {local_icon_backup})")
+        print(f"Downloaded icon from DuckDuckGo")
         return icon_file
-    
-    # 4. Try to download favicon
+
+    # 3. Try to download favicon
     print(f"Trying to download favicon from {url}...")
     if download_image(url, icon_file):
-        shutil.copy(icon_file, local_icon_backup)
-        print(f"Downloaded favicon (saved to {local_icon_backup})")
+        print(f"Downloaded favicon")
         return icon_file
-    
-    # 5. Fallback to default Chromium icon
+
+    # 4. Fallback to default Chromium icon
     fallback = Path("/usr/share/icons/hicolor/48x48/apps/chromium.png")
     if fallback.exists():
         shutil.copy(fallback, icon_file)
         print(f"Using fallback Chromium icon")
         return icon_file
-    
+
     print(f"Warning: Could not find any icon", file=sys.stderr)
     return None
 
@@ -460,14 +440,10 @@ def change_icon(name):
     # Save to final location
     safe = safe_name(name).lower()
     icon_file = ICON_DIR / f"{safe}.png"
-    local_icons_dir = Path.home() / ".icons"
-    local_icon_backup = local_icons_dir / f"{safe}.png"
 
     ICON_DIR.mkdir(parents=True, exist_ok=True)
-    local_icons_dir.mkdir(parents=True, exist_ok=True)
 
     shutil.copy(selected_temp, icon_file)
-    shutil.copy(selected_temp, local_icon_backup)
     
     # Clean up temp directory
     shutil.rmtree(temp_dir)
